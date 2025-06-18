@@ -16,9 +16,15 @@ jobs:
       - name: 下载并解压 OpenWrt SDK
         run: |
           wget https://downloads.openwrt.org/releases/18.06.5/targets/mediatek/mt7622/openwrt-sdk-18.06.5-mediatek-mt7622_gcc-7.3.0_musl.Linux-x86_64.tar.xz
-          tar -xJf openwrt-sdk-*.tar.xz
-          rm -rf sdk
-          mv openwrt-sdk-* sdk
+          tar -xJf openwrt-sdk-18.06.5-mediatek-mt7622_gcc-7.3.0_musl.Linux-x86_64.tar.xz
+
+          # 如果 sdk 文件或目录存在，先删除
+          if [ -e sdk ]; then
+            rm -rf sdk
+          fi
+
+          # 将解压目录改名为 sdk
+          mv openwrt-sdk-18.06.5-mediatek-mt7622_gcc-7.3.0_musl.Linux-x86_64 sdk
 
       - name: 初始化 Feeds 并安装 wget
         working-directory: ./sdk
@@ -26,9 +32,10 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install wget
 
-      - name: 修改 wget Makefile 使其静态编译并启用 SSL
+      - name: 修改 wget Makefile，开启静态编译和 SSL
         working-directory: ./sdk/feeds/base/wget
         run: |
+          # 确保有CONFIGURE_ARGS这行，然后添加静态编译参数
           sed -i '/CONFIGURE_ARGS/ a\ \t--enable-static --disable-shared' Makefile
           echo 'TARGET_CFLAGS += -static' >> Makefile
 
@@ -36,11 +43,10 @@ jobs:
         working-directory: ./sdk
         run: |
           make defconfig
-          make package/feeds/base/wget/compile V=s
+          make package/wget/compile V=s
 
-      - name: 上传编译好的 wget
+      - name: 上传静态编译的 wget
         uses: actions/upload-artifact@v4
         with:
           name: wget-static
-          path: |
-            sdk/build_dir/target-*/wget-*/src/wget
+          path: sdk/build_dir/target-*/wget-*/src/wget
