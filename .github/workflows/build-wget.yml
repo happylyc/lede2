@@ -17,7 +17,9 @@ jobs:
         run: |
           wget https://downloads.openwrt.org/releases/18.06.5/targets/mediatek/mt7622/openwrt-sdk-18.06.5-mediatek-mt7622_gcc-7.3.0_musl.Linux-x86_64.tar.xz
           tar -xJf openwrt-sdk-*.tar.xz
-          rm -rf sdk
+          if [ -e sdk ]; then
+            rm -rf sdk
+          fi
           mv openwrt-sdk-* sdk
 
       - name: 下载 wget 源码并放入 package
